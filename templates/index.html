@@ -70,7 +70,15 @@
 {% if result %}
 <section class="result" data-testid="result-panel">
   <h2>Result</h2>
-  <table class="result-table">
+  {% if result.warnings %}
+  <div class="warning" data-testid="warning-block">
+    {% for w in result.warnings %}<p>{{ w }}</p>{% endfor %}
+  </div>
+  {% endif %}
+  {% if result.region != "active" %}
+  <p class="muted" data-testid="model-caveat">These values come from forward-active equations whose assumptions are violated here. Do not use them.</p>
+  {% endif %}
+  <table class="result-table {% if result.region != 'active' %}is-invalid{% endif %}">
     <tr><th>VTH</th><td class="value mono">{{ result.vth|fmt_voltage }}</td></tr>
     <tr><th>RTH</th><td class="value mono">{{ result.rth|fmt_resistance }}</td></tr>
     <tr><th>IB</th><td class="value mono">{{ result.ib|fmt_current }}</td></tr>

@@ -103,5 +103,29 @@ class TestValidationWeb(unittest.TestCase):
         self.assertIn('value="47"', body)
 
 
+class TestRegionPresentation(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_cutoff_shows_warning_and_caveat(self):
+        body = self.client.post("/calculate", data=dict(REFERENCE_FORM, vcc="5", r2="5")).get_data(as_text=True)
+        self.assertIn("Cutoff", body)
+        self.assertIn('data-testid="warning-block"', body)
+        self.assertIn("do not apply", body)
+        self.assertIn('data-testid="model-caveat"', body)
+        self.assertIn("is-invalid", body)
+
+    def test_saturation_shows_warning(self):
+        body = self.client.post("/calculate", data=dict(REFERENCE_FORM, rc="10")).get_data(as_text=True)
+        self.assertIn("Saturation", body)
+        self.assertIn('data-testid="warning-block"', body)
+
+    def test_active_has_no_warning_or_caveat(self):
+        body = self.client.post("/calculate", data=REFERENCE_FORM).get_data(as_text=True)
+        self.assertNotIn('data-testid="warning-block"', body)
+        self.assertNotIn('data-testid="model-caveat"', body)
+        self.assertNotIn("is-invalid", body)
+
+
 if __name__ == "__main__":
     unittest.main()
