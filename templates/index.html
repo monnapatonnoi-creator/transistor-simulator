@@ -62,4 +62,21 @@
   </fieldset>
   <button type="submit">Calculate DC Bias</button>
 </form>
+{% if result %}
+<section class="result" data-testid="result-panel">
+  <h2>Result</h2>
+  <table class="result-table">
+    <tr><th>VTH</th><td class="value mono">{{ result.vth|fmt_voltage }}</td></tr>
+    <tr><th>RTH</th><td class="value mono">{{ result.rth|fmt_resistance }}</td></tr>
+    <tr><th>IB</th><td class="value mono">{{ result.ib|fmt_current }}</td></tr>
+    <tr><th>IC</th><td class="value mono">{{ result.ic|fmt_current }}</td></tr>
+    <tr><th>IE</th><td class="value mono">{{ result.ie|fmt_current }}</td></tr>
+    <tr><th>VB</th><td class="value mono">{{ result.vb|fmt_voltage }}</td></tr>
+    <tr><th>VE</th><td class="value mono">{{ result.ve|fmt_voltage }}</td></tr>
+    <tr><th>VC</th><td class="value mono">{{ result.vc|fmt_voltage }}</td></tr>
+    <tr><th>VCE</th><td class="value mono">{{ result.vce|fmt_voltage }}</td></tr>
+  </table>
+  <div class="region"><strong>Region:</strong> <span data-testid="region">{{ region_labels[result.region] }}</span></div>
+</section>
+{% endif %}
 {% endblock %}

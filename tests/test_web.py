@@ -35,5 +35,35 @@ class TestIndexPage(unittest.TestCase):
         self.assertIn("/static/style.css", body)
 
 
+REFERENCE_FORM = {
+    "bias_type": "voltage_divider", "vcc": "12",
+    "r1": "100", "r1_unit": "kohm", "r2": "22", "r2_unit": "kohm",
+    "rc": "2.2", "rc_unit": "kohm", "re": "1", "re_unit": "kohm",
+    "beta": "100", "vbe": "0.70",
+}
+
+
+class TestCalculate(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_reference_case_renders_backend_values(self):
+        resp = self.client.post("/calculate", data=REFERENCE_FORM)
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn('data-testid="result-panel"', body)
+        self.assertIn("8.05 V", body)
+        self.assertIn("1.23 mA", body)
+        self.assertIn("12.3 µA", body)
+        self.assertIn("18.0 kΩ", body)
+        self.assertIn("Forward Active", body)
+
+    def test_beta_changes_result(self):
+        form = dict(REFERENCE_FORM, beta="50")
+        body = self.client.post("/calculate", data=form).get_data(as_text=True)
+        self.assertIn("1.06 mA", body)
+        self.assertNotIn("1.23 mA", body)
+
+
 if __name__ == "__main__":
     unittest.main()
