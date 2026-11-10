@@ -89,3 +89,22 @@ def voltage_divider(p: BiasParams) -> BiasResult:
 BIAS_REGISTRY: dict[str, BiasType] = {
     "voltage_divider": BiasType("voltage_divider", "Voltage Divider", voltage_divider),
 }
+
+
+def validate_params(p: BiasParams) -> None:
+    """Raise BiasInputError for the first physically invalid component value."""
+    for field in ("vcc", "r1", "r2", "rc", "re", "beta"):
+        if getattr(p, field) <= 0:
+            raise BiasInputError(f"{field} must be greater than zero")
+    if p.vbe < 0:
+        raise BiasInputError("vbe must not be negative")
+    if p.vbe >= p.vcc:
+        raise BiasInputError("vbe must be less than vcc")
+
+
+def calculate(bias_type: str, p: BiasParams) -> BiasResult:
+    """Validate the parameters and evaluate the registered bias type."""
+    if bias_type not in BIAS_REGISTRY:
+        raise UnknownBiasType(f"Unknown bias type: {bias_type}")
+    validate_params(p)
+    return BIAS_REGISTRY[bias_type].fn(p)
