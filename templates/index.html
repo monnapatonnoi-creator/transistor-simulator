@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
+{% if errors %}
+<div class="error" data-testid="error-block">
+  {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+</div>
+{% endif %}
 <form method="post" action="{{ url_for('calculate_bias') }}">
   <fieldset>
     <legend>Bias Type</legend>

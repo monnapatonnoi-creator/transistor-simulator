@@ -65,5 +65,43 @@ class TestCalculate(unittest.TestCase):
         self.assertNotIn("1.23 mA", body)
 
 
+class TestValidationWeb(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_zero_beta_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, beta="0"))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn('data-testid="error-block"', body)
+        self.assertIn("beta must be greater than zero", body)
+        self.assertNotIn('data-testid="result-panel"', body)
+
+    def test_non_numeric_vcc_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, vcc="abc"))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn("vcc must be a number", body)
+
+    def test_whitespace_input_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, vcc="   "))
+        body = resp.get_data(as_text=True)
+        self.assertIn("vcc must be a number", body)
+
+    def test_unknown_unit_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, r1_unit="mega"))
+        body = resp.get_data(as_text=True)
+        self.assertIn("Unknown unit: mega", body)
+
+    def test_unknown_bias_type_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, bias_type="fixed_bias"))
+        body = resp.get_data(as_text=True)
+        self.assertIn("Unknown bias type: fixed_bias", body)
+
+    def test_submitted_values_preserved(self):
+        body = self.client.post("/calculate", data=dict(REFERENCE_FORM, beta="0", r1="47")).get_data(as_text=True)
+        self.assertIn('value="47"', body)
+
+
 if __name__ == "__main__":
     unittest.main()
