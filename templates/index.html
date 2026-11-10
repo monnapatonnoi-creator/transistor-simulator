@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="{{ url_for('calculate_bias') }}">
+  <fieldset>
+    <legend>Bias Type</legend>
+    <select name="bias_type">
+    {% for bt in bias_types %}
+      <option value="{{ bt.key }}">{{ bt.label }}</option>
+    {% endfor %}
+    </select>
+  </fieldset>
+  <fieldset>
+    <legend>Parameters</legend>
+    <div class="row">
+      <label>
+        VCC (V)
+        <input type="number" name="vcc" step="any" value="{{ form.vcc }}">
+      </label>
+      <label>
+        R1
+        <select name="r1_unit">
+          <option value="ohm" {% if form.r1_unit == 'ohm' %}selected{% endif %}>Ω</option>
+          <option value="kohm" {% if form.r1_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+        </select>
+        <input type="number" name="r1" step="any" value="{{ form.r1 }}">
+      </label>
+      <label>
+        R2
+        <select name="r2_unit">
+          <option value="ohm" {% if form.r2_unit == 'ohm' %}selected{% endif %}>Ω</option>
+          <option value="kohm" {% if form.r2_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+        </select>
+        <input type="number" name="r2" step="any" value="{{ form.r2 }}">
+      </label>
+    </div>
+    <div class="row">
+      <label>
+        RC
+        <select name="rc_unit">
+          <option value="ohm" {% if form.rc_unit == 'ohm' %}selected{% endif %}>Ω</option>
+          <option value="kohm" {% if form.rc_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+        </select>
+        <input type="number" name="rc" step="any" value="{{ form.rc }}">
+      </label>
+      <label>
+        RE
+        <select name="re_unit">
+          <option value="ohm" {% if form.re_unit == 'ohm' %}selected{% endif %}>Ω</option>
+          <option value="kohm" {% if form.re_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+        </select>
+        <input type="number" name="re" step="any" value="{{ form.re }}">
+      </label>
+      <label>
+        β
+        <input type="number" name="beta" step="any" value="{{ form.beta }}">
+      </label>
+      <label>
+        VBE (V)
+        <input type="number" name="vbe" step="any" value="{{ form.vbe }}">
+      </label>
+    </div>
+  </fieldset>
+  <button type="submit">Calculate DC Bias</button>
+</form>
+{% endblock %}
