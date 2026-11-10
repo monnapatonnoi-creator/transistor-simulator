@@ -2,6 +2,8 @@ import unittest
 
 from dc_bias import (
     BIAS_REGISTRY,
+    REGION_LABELS,
+    VCE_SAT,
     BiasInputError,
     BiasParams,
     UnknownBiasType,
@@ -59,6 +61,44 @@ class TestValidation(unittest.TestCase):
 
     def test_registry_contains_voltage_divider(self):
         self.assertIn("voltage_divider", BIAS_REGISTRY)
+
+
+CUTOFF = BiasParams(vcc=5.0, r1=100e3, r2=5e3, rc=2.2e3, re=1e3, beta=100.0, vbe=0.70)
+SATURATED = BiasParams(vcc=12.0, r1=100e3, r2=22e3, rc=10e3, re=1e3, beta=100.0, vbe=0.70)
+
+
+class TestRegion(unittest.TestCase):
+    def test_cutoff_labelled_and_values_left_raw(self):
+        r = calculate("voltage_divider", CUTOFF)
+        self.assertEqual(r.region, "cutoff")
+        self.assertTrue(r.warnings)
+        self.assertAlmostEqual(r.ib, -4.367402e-06, delta=1e-11)  # raw, negative, not corrected
+        self.assertAlmostEqual(r.vce, 6.401936, places=5)
+
+    def test_saturation_labelled_and_values_left_raw(self):
+        r = calculate("voltage_divider", SATURATED)
+        self.assertEqual(r.region, "saturation")
+        self.assertTrue(r.warnings)
+        self.assertAlmostEqual(r.vce, -1.540738, places=5)  # VCE <= VCE_SAT
+        self.assertLess(r.vce, VCE_SAT)
+
+    def test_ib_exactly_zero_is_cutoff(self):
+        # Exact-arithmetic boundary case: VTH = 1.0*3/(1+3) = 0.75 exactly, VBE = 0.75
+        # exactly, so IB = 0.0 and the region must be cutoff, not active.
+        p = BiasParams(vcc=1.0, r1=1.0, r2=3.0, rc=100.0, re=100.0, beta=100.0, vbe=0.75)
+        r = calculate("voltage_divider", p)
+        self.assertEqual(r.ib, 0.0)
+        self.assertEqual(r.region, "cutoff")
+        self.assertTrue(r.warnings)
+
+    def test_active_has_no_warnings(self):
+        r = calculate("voltage_divider", REFERENCE)
+        self.assertEqual(r.region, "active")
+        self.assertEqual(r.warnings, ())
+
+    def test_region_labels_cover_every_region(self):
+        self.assertEqual(REGION_LABELS["active"], "Forward Active")
+        self.assertEqual(set(REGION_LABELS), {"active", "cutoff", "saturation"})
 
 
 if __name__ == "__main__":

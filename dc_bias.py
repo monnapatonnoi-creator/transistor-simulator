@@ -5,7 +5,7 @@ SI units only: volts, ohms, amperes. This module knows nothing about HTTP or HTM
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 VCE_SAT = 0.2
@@ -102,9 +102,35 @@ def validate_params(p: BiasParams) -> None:
         raise BiasInputError("vbe must be less than vcc")
 
 
+def classify_region(p: BiasParams, r: BiasResult) -> tuple[str, tuple[str, ...]]:
+    """Label the operating region. The result values are never corrected here."""
+    warnings: list[str] = []
+    if r.ib <= 0 or r.vth <= p.vbe:
+        warnings.append(
+            "Device is off (VTH <= VBE). Forward-active equations do not apply; "
+            "these values are not usable."
+        )
+        region = "cutoff"
+    elif r.vce <= VCE_SAT:
+        warnings.append(
+            "Device is in saturation (VCE <= 0.2 V). Forward-active equations do "
+            "not apply; these values are not usable."
+        )
+        region = "saturation"
+    else:
+        region = "active"
+    if r.vce > p.vcc:
+        warnings.append(
+            "VCE exceeds VCC; the forward-active result is physically implausible."
+        )
+    return region, tuple(warnings)
+
+
 def calculate(bias_type: str, p: BiasParams) -> BiasResult:
-    """Validate the parameters and evaluate the registered bias type."""
+    """Validate the parameters, evaluate the bias type, then label its region."""
     if bias_type not in BIAS_REGISTRY:
         raise UnknownBiasType(f"Unknown bias type: {bias_type}")
     validate_params(p)
-    return BIAS_REGISTRY[bias_type].fn(p)
+    raw = BIAS_REGISTRY[bias_type].fn(p)
+    region, warnings = classify_region(p, raw)
+    return replace(raw, region=region, warnings=warnings)
