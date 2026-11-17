@@ -69,7 +69,7 @@ they still work after cloning the repository somewhere else.
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 65 tests ... OK`.
+Expected output: `Ran 66 tests ... OK`.
 
 ## Example — Lab 03 A2 (Fixed Bias)
 

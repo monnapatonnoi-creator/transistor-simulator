@@ -70,4 +70,4 @@ appears as `940 µA` rather than `0.94 mA`; the two are the same operating point
 `units.py` was deliberately left unchanged so every Lab 02 number stays identical.
 
 Test run: `python -m unittest discover -s tests -v` →
-`Ran 65 tests ... OK` (18 model + 6 units + 39 web/diagram + 2 launcher checks).
+`Ran 66 tests ... OK` (18 model + 6 units + 40 web/diagram + 2 launcher checks).

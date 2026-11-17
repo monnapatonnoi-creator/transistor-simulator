@@ -351,6 +351,10 @@ class TestLiveDiagram(unittest.TestCase):
         self.assertIn('data-bind="ic">1.23 mA', body)
         self.assertIn('data-bind="vce">8.05 V', body)
 
+    def test_diagram_script_is_linked(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertIn('src="/static/diagram.js"', body)
+
 
 if __name__ == "__main__":
     unittest.main()

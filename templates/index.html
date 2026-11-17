@@ -73,7 +73,7 @@
     <text x="548" y="186" font-size="16" fill="#1d4ed8">VCE <tspan data-bind="vce">{% if result %}{{ result.vce|fmt_voltage }}{% else %}—{% endif %}</tspan></text>
     <text x="548" y="224" font-size="12" fill="#6b7280">กด Calculate เพื่ออัปเดตผลลัพธ์</text>
   </svg>
-  <p class="diagram-caption">ภาพอัปเดตตามโหมดและค่าที่กรอกขณะพิมพ์</p>
+  <p class="diagram-caption">ภาพอัปเดตขณะพิมพ์ · เปลี่ยนโหมดแล้วกด Apply mode ก่อน Calculate</p>
 </section>
 <form method="get" action="{{ url_for('index') }}" class="mode-switch">
   <fieldset>
