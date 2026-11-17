@@ -66,17 +66,29 @@ they still work after cloning the repository somewhere else.
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 54 tests ... OK`.
+Expected output: `Ran 60 tests ... OK`.
 
 ## Example — Lab 03 A2 (Fixed Bias)
 
 1. Select **Fixed Bias** → **Apply mode**.
-2. Enter `VCC = 12` V, `RB = 1000` kΩ (= 1 MΩ), `RC = 2.2` kΩ, `β = 100`, `VBE = 0.70` V.
+2. Enter `VCC = 12` V, `RB = 1` MΩ (or `1000` kΩ), `RC = 2.2` kΩ, `β = 100`, `VBE = 0.70` V.
 3. Press **Calculate DC Bias** → `IB 11.3 µA`, `IC 1.13 mA`, `VCE 9.51 V`, region Forward Active.
 
 For A3/A4, select **Emitter Bias** with the same values plus `RE = 1` kΩ
 (`IC 1.03 mA`, `VCE 8.71 V`), then change `RE` to 2 kΩ
 (`IC 940 µA`, `VCE 8.03 V`). See `docs/validation.md` for all five acceptance cases.
+
+## Circuit diagrams
+
+Static diagrams for the three bias modes, with the Lab 03 reference values labelled
+on each one. PNG versions are ready to attach to the submission; SVG sources are
+editable and stored alongside them.
+
+| Mode | PNG | SVG |
+|---|---|---|
+| Voltage Divider (A1) | [PNG](docs/images/voltage-divider.png) | [SVG](docs/images/voltage-divider.svg) |
+| Fixed Bias (A2, A5) | [PNG](docs/images/fixed-bias.png) | [SVG](docs/images/fixed-bias.svg) |
+| Emitter Bias (A3, A4) | [PNG](docs/images/emitter-bias.png) | [SVG](docs/images/emitter-bias.svg) |
 
 ## Model and limitations
 
@@ -112,6 +124,7 @@ docs/
   design-note.md        # student-written summary of this design
   validation.md         # Lab 02 + Lab 03 A1–A5 reference numbers and evidence
   reflection.md         # what was learned / limits
+  images/               # circuit diagrams: editable SVG + submission-ready PNG
 docs/superpowers/
   specs/                # approved Lab 03 design spec
   plans/                # implementation plan
