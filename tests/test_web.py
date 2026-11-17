@@ -298,5 +298,59 @@ class TestMegaohmUnit(unittest.TestCase):
         self.assertIn('name="carry_rb_unit" value="mohm"', back)
 
 
+class TestLiveDiagram(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def _group_class(self, body: str, group: str) -> str:
+        match = re.search(rf'<g data-group="{group}" class="([^"]*)"', body)
+        self.assertIsNotNone(match, f"missing diagram group {group}")
+        return match.group(1)
+
+    def test_diagram_is_rendered_with_current_values(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertIn('class="live-diagram"', body)
+        self.assertIn('data-bind="vcc">12 V', body)
+        self.assertIn('data-bind="r1">100 kΩ', body)
+        self.assertIn('data-bind="beta">100', body)
+
+    def test_diagram_uses_megaohm_label(self):
+        body = self.client.get(
+            "/?bias_type=fixed_bias&rb=1&rb_unit=mohm"
+        ).get_data(as_text=True)
+        self.assertIn('data-bind="rb">1 MΩ', body)
+
+    def test_diagram_groups_follow_bias_mode(self):
+        cases = {
+            "/": {
+                "r1": False, "r2": False, "rb": True,
+                "re": False, "emitter-direct": True,
+            },
+            "/?bias_type=fixed_bias": {
+                "r1": True, "r2": True, "rb": False,
+                "re": True, "emitter-direct": False,
+            },
+            "/?bias_type=emitter_bias": {
+                "r1": True, "r2": True, "rb": False,
+                "re": False, "emitter-direct": True,
+            },
+        }
+        for url, expected in cases.items():
+            body = self.client.get(url).get_data(as_text=True)
+            for group, hidden in expected.items():
+                self.assertEqual(
+                    "is-hidden" in self._group_class(body, group),
+                    hidden,
+                    f"{url}: wrong visibility for {group}",
+                )
+
+    def test_diagram_result_values(self):
+        body = self.client.post(
+            "/calculate", data=REFERENCE_FORM
+        ).get_data(as_text=True)
+        self.assertIn('data-bind="ic">1.23 mA', body)
+        self.assertIn('data-bind="vce">8.05 V', body)
+
+
 if __name__ == "__main__":
     unittest.main()

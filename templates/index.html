@@ -1,10 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
+{% macro unit_label(unit) -%}
+{%- if unit == 'mohm' -%}MΩ{%- elif unit == 'kohm' -%}kΩ{%- else -%}Ω{%- endif -%}
+{%- endmacro %}
 {% if errors %}
 <div class="error" data-testid="error-block">
   {% for e in errors %}<p>{{ e }}</p>{% endfor %}
 </div>
 {% endif %}
+<section class="diagram-panel" aria-label="Circuit diagram">
+  <svg class="live-diagram" viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role="img">
+    <rect width="820" height="470" fill="#ffffff"/>
+    <text x="24" y="34" font-size="20" font-weight="700" fill="#111827" data-bind="mode-title">{% if active_bias == 'fixed_bias' %}Fixed Bias{% elif active_bias == 'emitter_bias' %}Emitter Bias{% else %}Voltage Divider Bias{% endif %}</text>
+    <text x="24" y="58" font-size="13" fill="#4b5563">VCC <tspan data-bind="vcc">{{ form.vcc }} V</tspan> · β <tspan data-bind="beta">{{ form.beta }}</tspan> · VBE <tspan data-bind="vbe">{{ form.vbe }} V</tspan></text>
+
+    <path d="M120 96 H400 M120 420 H400" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <circle cx="120" cy="96" r="4" fill="#2563eb"/>
+    <circle cx="400" cy="96" r="4" fill="#2563eb"/>
+    <text x="24" y="88" font-size="13" font-weight="700" fill="#1d4ed8">VCC</text>
+
+    <path d="M180 96 V118" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <path d="M180 188 V240 H320" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <circle cx="180" cy="240" r="4" fill="#2563eb"/>
+
+    <g data-group="r1" class="diagram-group{% if active_bias != 'voltage_divider' %} is-hidden{% endif %}">
+      <rect x="170" y="118" width="20" height="70" fill="#fef3c7" stroke="#1f2937" stroke-width="2"/>
+      <text x="202" y="142" font-size="14" font-weight="700" fill="#111827">R1</text>
+      <text x="202" y="160" font-size="13" fill="#4b5563" data-bind="r1">{{ form.r1 }} {{ unit_label(form.r1_unit) }}</text>
+    </g>
+    <g data-group="rb" class="diagram-group{% if active_bias == 'voltage_divider' %} is-hidden{% endif %}">
+      <rect x="170" y="118" width="20" height="70" fill="#fef3c7" stroke="#1f2937" stroke-width="2"/>
+      <text x="202" y="142" font-size="14" font-weight="700" fill="#111827">RB</text>
+      <text x="202" y="160" font-size="13" fill="#4b5563" data-bind="rb">{{ form.rb }} {{ unit_label(form.rb_unit) }}</text>
+    </g>
+    <g data-group="r2" class="diagram-group{% if active_bias != 'voltage_divider' %} is-hidden{% endif %}">
+      <path d="M180 240 V268 M180 338 V420" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+      <rect x="170" y="268" width="20" height="70" fill="#fef3c7" stroke="#1f2937" stroke-width="2"/>
+      <text x="202" y="292" font-size="14" font-weight="700" fill="#111827">R2</text>
+      <text x="202" y="310" font-size="13" fill="#4b5563" data-bind="r2">{{ form.r2 }} {{ unit_label(form.r2_unit) }}</text>
+    </g>
+
+    <path d="M400 96 V118" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <rect x="390" y="118" width="20" height="70" fill="#fef3c7" stroke="#1f2937" stroke-width="2"/>
+    <path d="M400 188 V236" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <text x="422" y="142" font-size="14" font-weight="700" fill="#111827">RC</text>
+    <text x="422" y="160" font-size="13" fill="#4b5563" data-bind="rc">{{ form.rc }} {{ unit_label(form.rc_unit) }}</text>
+
+    <path d="M320 212 V264 M320 226 L400 236 M320 250 L390 306" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <circle cx="400" cy="236" r="4" fill="#2563eb"/>
+    <path d="M363 283 L375 293 M375 293 L364 298" stroke="#1f2937" stroke-width="2" fill="none"/>
+    <text x="292" y="242" font-size="13" font-weight="700" fill="#111827">B</text>
+    <text x="382" y="222" font-size="13" font-weight="700" fill="#111827">C</text>
+    <text x="408" y="314" font-size="13" font-weight="700" fill="#111827">E</text>
+    <text x="330" y="330" font-size="12" font-weight="700" fill="#b91c1c">NPN</text>
+
+    <g data-group="emitter-direct" class="diagram-group{% if active_bias != 'fixed_bias' %} is-hidden{% endif %}">
+      <path d="M390 306 V420" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    </g>
+    <g data-group="re" class="diagram-group{% if active_bias == 'fixed_bias' %} is-hidden{% endif %}">
+      <path d="M390 306 V336 M390 386 V420" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+      <rect x="380" y="336" width="20" height="50" fill="#fef3c7" stroke="#1f2937" stroke-width="2"/>
+      <text x="422" y="354" font-size="14" font-weight="700" fill="#111827">RE</text>
+      <text x="422" y="372" font-size="13" fill="#4b5563" data-bind="re">{{ form.re }} {{ unit_label(form.re_unit) }}</text>
+    </g>
+
+    <path d="M180 420 V432 M160 432 H200 M168 438 H192 M176 444 H184" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+    <text x="206" y="442" font-size="13" font-weight="700" fill="#111827">GND</text>
+
+    <rect x="530" y="96" width="264" height="150" rx="10" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5"/>
+    <text x="548" y="124" font-size="14" font-weight="700" fill="#111827">ผลลัพธ์</text>
+    <text x="548" y="156" font-size="16" fill="#1d4ed8">IC <tspan data-bind="ic">{% if result %}{{ result.ic|fmt_current }}{% else %}—{% endif %}</tspan></text>
+    <text x="548" y="186" font-size="16" fill="#1d4ed8">VCE <tspan data-bind="vce">{% if result %}{{ result.vce|fmt_voltage }}{% else %}—{% endif %}</tspan></text>
+    <text x="548" y="224" font-size="12" fill="#6b7280">กด Calculate เพื่ออัปเดตผลลัพธ์</text>
+  </svg>
+  <p class="diagram-caption">ภาพอัปเดตตามโหมดและค่าที่กรอกขณะพิมพ์</p>
+</section>
 <form method="get" action="{{ url_for('index') }}" class="mode-switch">
   <fieldset>
     <legend>Bias Type — change then press Apply mode</legend>

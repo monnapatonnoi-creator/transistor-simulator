@@ -49,6 +49,18 @@ button {
 button:hover { background: #1264a0; }
 button.secondary { background: #e8f1f7; color: #1d638b; border: 1px solid #9db5c6; }
 .mode-switch fieldset { background: #f8fbfd; }
+.diagram-panel { margin: 1rem 0; }
+.live-diagram {
+  display: block;
+  width: 100%;
+  max-width: 820px;
+  height: auto;
+  border: 1px solid #d3e0ec;
+  border-radius: 6px;
+  background: #fff;
+}
+.diagram-group.is-hidden { display: none; }
+.diagram-caption { font-size: 0.85rem; color: #546d83; }
 .mode-label { font-size: 0.9rem; color: #546d83; }
 .error {
   background: #fff4e9;
