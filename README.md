@@ -1,18 +1,21 @@
 # BJT DC Bias Web App
 
-A Flask web application that computes the DC operating point of a **NPN Common Emitter
-with Voltage-Divider Bias**, built for ENG29 2121 Lab 02. This is W2 of the Virtual
-Transistor Laboratory — more bias types and analyses are added in later weeks without
-changing this week's routes or templates.
+A Flask web application that computes the DC operating point of an NPN common-emitter
+circuit for three single-supply bias types: **Voltage Divider** (Lab 02), **Fixed Bias**
+and **Emitter Bias** (Lab 03), built for ENG29 2121.
 
 ## What it does
 
-- Browser form accepts `VCC`, `R1`, `R2`, `RC`, `RE`, `β`, `VBE` (resistors in Ω or kΩ).
-- Python backend computes `VTH`, `RTH`, `IB`, `IC`, `IE`, `VB`, `VE`, `VC`, `VCE`
-  with units and an operating-region verdict (Forward Active / Cutoff / Saturation).
-- Invalid input shows a readable error on the same page; results outside the
-  forward-active assumption are flagged with a warning.
-- Results come from the backend on every request — nothing is hard-coded in HTML.
+- Pick a bias type from the dropdown and press **Apply mode**. The page reloads showing
+  only the fields that circuit uses — no JavaScript.
+  - **Voltage Divider** — `VCC`, `R1`, `R2`, `RC`, `RE`, `β`, `VBE`
+  - **Fixed Bias** — `VCC`, `RB`, `RC`, `β`, `VBE` (emitter tied to ground)
+  - **Emitter Bias** — `VCC`, `RB`, `RE`, `RC`, `β`, `VBE`
+- Resistors accept Ω or kΩ (1 MΩ = 1000 kΩ). The model keeps SI units internally.
+- The backend computes `VTH`, `RTH`, `IB`, `IC`, `IE`, `VB`, `VE`, `VC`, `VCE` and a
+  region verdict (Forward Active / Cutoff / Saturation). Invalid input and results
+  outside the forward-active assumptions are flagged with readable warnings.
+- All numbers come from the backend on every request — nothing is hard-coded in HTML.
 
 ## Requirements
 
@@ -56,37 +59,55 @@ Open `http://127.0.0.1:5000/` in your browser.
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 33 tests ... OK`.
+Expected output: `Ran 50 tests ... OK`.
+
+## Example — Lab 03 A2 (Fixed Bias)
+
+1. Select **Fixed Bias** → **Apply mode**.
+2. Enter `VCC = 12` V, `RB = 1000` kΩ (= 1 MΩ), `RC = 2.2` kΩ, `β = 100`, `VBE = 0.70` V.
+3. Press **Calculate DC Bias** → `IB 11.3 µA`, `IC 1.13 mA`, `VCE 9.51 V`, region Forward Active.
+
+For A3/A4, select **Emitter Bias** with the same values plus `RE = 1` kΩ
+(`IC 1.03 mA`, `VCE 8.71 V`), then change `RE` to 2 kΩ
+(`IC 940 µA`, `VCE 8.03 V`). See `docs/validation.md` for all five acceptance cases.
 
 ## Model and limitations
 
-- Equations: `VTH = VCC·R2/(R1+R2)`, `RTH = R1∥R2`, `IB = (VTH−VBE)/(RTH+(β+1)RE)`,
-  `IC = β·IB`, `IE = (β+1)·IB`, `VE = IE·RE`, `VB = VE+VBE`, `VC = VCC−IC·RC`,
-  `VCE = VC−VE`.
-- Fixed β and fixed VBE, forward-active approximation only. No Early effect, no
-  temperature dependence, no self-heating.
-- Not a SPICE simulation. Values outside the active region are labelled and their raw
-  numbers are de-emphasised, not corrected.
-- Do not open `templates/index.html` directly (`file://`); it requires the Flask server.
+Common forward-active equations (all modes): `IC = β·IB`, `IE = (β+1)·IB`,
+`VB = VE+VBE`, `VC = VCC−IC·RC`, `VCE = VC−VE`.
+
+- **Voltage Divider** (Lab 02, unchanged): `VTH = VCC·R2/(R1+R2)`, `RTH = R1∥R2`,
+  `IB = (VTH−VBE)/(RTH+(β+1)RE)`.
+- **Fixed Bias**: `IB = (VCC−VBE)/RB`, `VE = 0`. `VTH`/`RTH` are reported as `VCC`/`RB`
+  so every mode shares the same result schema.
+- **Emitter Bias**: `IB = (VCC−VBE)/(RB+(β+1)RE)`.
+
+Fixed β and fixed VBE, forward-active approximation only. No Early effect, no
+temperature dependence, no self-heating. Not a SPICE simulation: values outside the
+active region are labelled and shown raw with a warning, never silently corrected.
+Do not open `templates/index.html` directly (`file://`); it requires the Flask server.
 
 ## Project structure
 
 ```
-app.py                  # Flask routes and request parsing only
-dc_bias.py              # pure engineering model (no HTML/HTTP knowledge)
+app.py                  # Flask routes, form parsing, unit conversion (no equations)
+dc_bias.py              # pure engineering model: dataclasses, equations, registry
 units.py                # SI formatting with engineering units
-templates/index.html    # one form + result panel (Jinja)
+templates/index.html    # mode switch + mode-specific form + result panel (Jinja)
 templates/base.html     # page shell
 static/style.css
 tests/test_dc_bias.py   # engineering math, validation, regions
-tests/test_web.py       # Flask test client: GET, POST, errors, warnings
+tests/test_web.py       # Flask test client: GET, POST, errors, warnings, A1–A5
 requirements.txt        # Flask>=3.0,<4
 README.md               # this file
 AGENTS.md               # conventions for AI coding sessions
 docs/
   design-note.md        # student-written summary of this design
-  validation.md         # independent reference numbers + evidence
+  validation.md         # Lab 02 + Lab 03 A1–A5 reference numbers and evidence
   reflection.md         # what was learned / limits
+docs/superpowers/
+  specs/                # approved Lab 03 design spec
+  plans/                # implementation plan
 ```
 
 ## Commits and delivery
