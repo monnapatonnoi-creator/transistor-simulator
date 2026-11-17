@@ -94,9 +94,9 @@ class TestValidationWeb(unittest.TestCase):
         self.assertIn("Unknown unit: mega", body)
 
     def test_unknown_bias_type_shows_error(self):
-        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, bias_type="fixed_bias"))
+        resp = self.client.post("/calculate", data=dict(REFERENCE_FORM, bias_type="no_such_bias"))
         body = resp.get_data(as_text=True)
-        self.assertIn("Unknown bias type: fixed_bias", body)
+        self.assertIn("Unknown bias type: no_such_bias", body)
 
     def test_submitted_values_preserved(self):
         body = self.client.post("/calculate", data=dict(REFERENCE_FORM, beta="0", r1="47")).get_data(as_text=True)
@@ -125,6 +125,39 @@ class TestRegionPresentation(unittest.TestCase):
         self.assertNotIn('data-testid="warning-block"', body)
         self.assertNotIn('data-testid="model-caveat"', body)
         self.assertNotIn("is-invalid", body)
+
+
+class TestModeSwitch(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_get_default_still_shows_all_divider_fields(self):
+        body = self.client.get("/").get_data(as_text=True)
+        for field in ("r1", "r2", "re"):
+            self.assertIn(f'name="{field}"', body)
+        self.assertNotIn('name="rb"', body)
+
+    def test_get_fixed_mode_hides_r1_and_re(self):
+        body = self.client.get("/?bias_type=fixed_bias").get_data(as_text=True)
+        self.assertIn('name="rb"', body)
+        for field in ("r1", "r2", "re"):
+            self.assertNotIn(f'name="{field}"', body)
+        self.assertIn('<option value="fixed_bias" selected', body)
+
+    def test_get_emitter_mode_hides_r1_r2(self):
+        body = self.client.get("/?bias_type=emitter_bias").get_data(as_text=True)
+        self.assertIn('name="rb"', body)
+        self.assertIn('name="re"', body)
+        self.assertNotIn('name="r1"', body)
+        self.assertNotIn('name="r2"', body)
+
+    def test_mode_switch_preserves_typed_values(self):
+        body = self.client.get(
+            "/?bias_type=fixed_bias&vcc=9&rb=470&rb_unit=kohm"
+            "&rc=1.5&rc_unit=kohm&beta=80&vbe=0.65"
+        ).get_data(as_text=True)
+        for value in ("9", "470", "1.5", "80", "0.65"):
+            self.assertIn(f'value="{value}"', body)
 
 
 if __name__ == "__main__":

@@ -5,15 +5,29 @@
   {% for e in errors %}<p>{{ e }}</p>{% endfor %}
 </div>
 {% endif %}
-<form method="post" action="{{ url_for('calculate_bias') }}">
+<form method="get" action="{{ url_for('index') }}" class="mode-switch">
   <fieldset>
-    <legend>Bias Type</legend>
+    <legend>Bias Type — change then press Apply mode</legend>
     <select name="bias_type">
     {% for bt in bias_types %}
-      <option value="{{ bt.key }}">{{ bt.label }}</option>
+      <option value="{{ bt.key }}" {% if bt.key == active_bias %}selected{% endif %}>{{ bt.label }}</option>
     {% endfor %}
     </select>
+    {% for field in ("vcc", "beta", "vbe") %}
+    <input type="hidden" name="{{ field }}" value="{{ form[field] }}">
+    {% endfor %}
+    {% for field in ("r1", "r2", "rb", "rc", "re") %}
+      {% if field in visible_fields %}
+      <input type="hidden" name="{{ field }}" value="{{ form[field] }}">
+      <input type="hidden" name="{{ field }}_unit" value="{{ form[field + '_unit'] }}">
+      {% endif %}
+    {% endfor %}
+    <button type="submit" class="secondary">Apply mode</button>
   </fieldset>
+</form>
+<form method="post" action="{{ url_for('calculate_bias') }}">
+  <input type="hidden" name="bias_type" value="{{ active_bias }}">
+  <p class="mode-label">Mode: <strong>{{ active_bias }}</strong></p>
   <fieldset>
     <legend>Parameters</legend>
     <div class="row">
@@ -21,6 +35,7 @@
         VCC (V)
         <input type="number" name="vcc" step="any" value="{{ form.vcc }}">
       </label>
+      {% if "r1" in visible_fields %}
       <label>
         R1
         <select name="r1_unit">
@@ -29,6 +44,8 @@
         </select>
         <input type="number" name="r1" step="any" value="{{ form.r1 }}">
       </label>
+      {% endif %}
+      {% if "r2" in visible_fields %}
       <label>
         R2
         <select name="r2_unit">
@@ -37,6 +54,17 @@
         </select>
         <input type="number" name="r2" step="any" value="{{ form.r2 }}">
       </label>
+      {% endif %}
+      {% if "rb" in visible_fields %}
+      <label>
+        RB
+        <select name="rb_unit">
+          <option value="ohm" {% if form.rb_unit == 'ohm' %}selected{% endif %}>Ω</option>
+          <option value="kohm" {% if form.rb_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+        </select>
+        <input type="number" name="rb" step="any" value="{{ form.rb }}">
+      </label>
+      {% endif %}
     </div>
     <div class="row">
       <label>
@@ -47,6 +75,7 @@
         </select>
         <input type="number" name="rc" step="any" value="{{ form.rc }}">
       </label>
+      {% if "re" in visible_fields %}
       <label>
         RE
         <select name="re_unit">
@@ -55,6 +84,7 @@
         </select>
         <input type="number" name="re" step="any" value="{{ form.re }}">
       </label>
+      {% endif %}
       <label>
         β
         <input type="number" name="beta" step="any" value="{{ form.beta }}">
@@ -69,7 +99,7 @@
 </form>
 {% if result %}
 <section class="result" data-testid="result-panel">
-  <h2>Result</h2>
+  <h2>Result — {{ active_bias }}</h2>
   {% if result.warnings %}
   <div class="warning" data-testid="warning-block">
     {% for w in result.warnings %}<p>{{ w }}</p>{% endfor %}
