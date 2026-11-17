@@ -57,7 +57,7 @@ class TestValidation(unittest.TestCase):
 
     def test_unknown_bias_type_rejected(self):
         with self.assertRaises(UnknownBiasType):
-            calculate("fixed_bias", REFERENCE)
+            calculate("no_such_bias", REFERENCE)
 
     def test_registry_contains_voltage_divider(self):
         self.assertIn("voltage_divider", BIAS_REGISTRY)
@@ -99,6 +99,54 @@ class TestRegion(unittest.TestCase):
     def test_region_labels_cover_every_region(self):
         self.assertEqual(REGION_LABELS["active"], "Forward Active")
         self.assertEqual(set(REGION_LABELS), {"active", "cutoff", "saturation"})
+
+
+class TestFixedBias(unittest.TestCase):
+    def test_fixed_reference(self):
+        p = BiasParams(vcc=12.0, rb=1e6, rc=2.2e3, beta=100.0, vbe=0.70)
+        r = calculate("fixed_bias", p)
+        self.assertAlmostEqual(r.ib, 1.13e-5, delta=1e-10)
+        self.assertAlmostEqual(r.ic, 1.13e-3, delta=1e-8)
+        self.assertEqual(r.ve, 0.0)
+        self.assertEqual(r.vth, 12.0)
+        self.assertEqual(r.rth, 1e6)
+        self.assertAlmostEqual(r.vce, 9.514, places=3)
+        self.assertEqual(r.region, "active")
+
+    def test_fixed_does_not_require_r1_r2_re(self):
+        p = BiasParams(vcc=12.0, rb=1e6, rc=2.2e3, beta=100.0, vbe=0.70)
+        r = calculate("fixed_bias", p)
+        self.assertGreater(r.ic, 0.0)
+
+    def test_zero_rb_rejected(self):
+        p = BiasParams(vcc=12.0, rb=0.0, rc=2.2e3, beta=100.0, vbe=0.70)
+        with self.assertRaises(BiasInputError) as ctx:
+            calculate("fixed_bias", p)
+        self.assertIn("rb must be greater than zero", str(ctx.exception))
+
+
+class TestEmitterBias(unittest.TestCase):
+    def test_emitter_reference(self):
+        p = BiasParams(vcc=12.0, rb=1e6, re=1e3, rc=2.2e3, beta=100.0, vbe=0.70)
+        r = calculate("emitter_bias", p)
+        self.assertAlmostEqual(r.ib, 1.02633969e-5, delta=1e-11)
+        self.assertAlmostEqual(r.ic, 1.02633969e-3, delta=1e-9)
+        self.assertAlmostEqual(r.ve, 1.03660309, places=5)
+        self.assertAlmostEqual(r.vce, 8.70544959, places=4)
+        self.assertEqual(r.region, "active")
+
+    def test_emitter_more_re_reduces_ic(self):
+        base = dict(vcc=12.0, rb=1e6, rc=2.2e3, beta=100.0, vbe=0.70)
+        r1 = calculate("emitter_bias", BiasParams(**base, re=1e3))
+        r2 = calculate("emitter_bias", BiasParams(**base, re=2e3))
+        self.assertLess(r2.ic, r1.ic)
+
+
+class TestRegistryThreeModes(unittest.TestCase):
+    def test_registry_has_three_bias_types(self):
+        self.assertEqual(
+            set(BIAS_REGISTRY), {"voltage_divider", "fixed_bias", "emitter_bias"}
+        )
 
 
 if __name__ == "__main__":
