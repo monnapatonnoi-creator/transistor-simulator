@@ -38,9 +38,9 @@
 
   <!-- NPN transistor -->
   <path d="M320 234 V286" stroke="#1f2937" stroke-width="3" fill="none"/>
-  <path d="M320 248 L390 258" stroke="#1f2937" stroke-width="2.5" fill="none"/>
+  <path d="M320 248 L400 258" stroke="#1f2937" stroke-width="2.5" fill="none"/>
   <path d="M320 272 L390 328" stroke="#1f2937" stroke-width="2.5" fill="none"/>
-  <circle cx="390" cy="258" r="4" fill="#2563eb"/>
+  <circle cx="400" cy="258" r="4" fill="#2563eb"/>
   <path d="M363 305 L375 315 M375 315 L364 320" stroke="#1f2937" stroke-width="2.2" fill="none"/>
   <text x="292" y="264" font-size="14" font-weight="700" fill="#111827">B</text>
   <text x="376" y="244" font-size="14" font-weight="700" fill="#111827">C</text>

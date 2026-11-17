@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from app import DEFAULTS, _to_ohms, create_app
@@ -261,9 +262,23 @@ class TestMegaohmUnit(unittest.TestCase):
         self.assertEqual(_to_ohms("2.2", "mohm"), 2.2e6)
 
     def test_mohm_option_in_every_resistor_field(self):
-        for url in ("/", "/?bias_type=fixed_bias"):
+        fields_by_mode = {
+            "/": ["r1", "r2", "rc", "re"],
+            "/?bias_type=fixed_bias": ["rb", "rc"],
+            "/?bias_type=emitter_bias": ["rb", "rc", "re"],
+        }
+        for url, fields in fields_by_mode.items():
             body = self.client.get(url).get_data(as_text=True)
-            self.assertIn('<option value="mohm">MΩ</option>', body)
+            for field in fields:
+                select = re.search(
+                    rf'<select name="{field}_unit">.*?</select>', body, re.S
+                )
+                self.assertIsNotNone(select, f"{url}: {field}_unit dropdown missing")
+                self.assertIn(
+                    '<option value="mohm">MΩ</option>',
+                    select.group(0),
+                    f"{url}: {field}_unit missing MΩ",
+                )
 
     def test_mohm_rb_reproduces_a2(self):
         body = self.client.post(

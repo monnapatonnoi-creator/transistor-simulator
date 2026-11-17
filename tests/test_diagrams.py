@@ -25,6 +25,20 @@ class TestCircuitDiagrams(unittest.TestCase):
             for label in labels:
                 self.assertIn(label, svg, f"{name}.svg missing {label}")
 
+    def test_collector_joins_rc(self):
+        for name in DIAGRAMS:
+            svg = (IMAGES / f"{name}.svg").read_text(encoding="utf-8")
+            self.assertIn(
+                '<path d="M320 248 L400 258"',
+                svg,
+                f"{name}.svg: collector does not reach RC",
+            )
+            self.assertIn(
+                '<circle cx="400" cy="258"',
+                svg,
+                f"{name}.svg: collector node is off the RC line",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
