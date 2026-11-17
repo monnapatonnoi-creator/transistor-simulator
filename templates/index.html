@@ -27,7 +27,7 @@
 </form>
 <form method="post" action="{{ url_for('calculate_bias') }}">
   <input type="hidden" name="bias_type" value="{{ active_bias }}">
-  <p class="mode-label">Mode: <strong>{{ active_bias }}</strong></p>
+  <p class="mode-label">Mode: {{ active_bias }}</p>
   <fieldset>
     <legend>Parameters</legend>
     <div class="row">

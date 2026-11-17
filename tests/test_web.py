@@ -160,5 +160,64 @@ class TestModeSwitch(unittest.TestCase):
             self.assertIn(f'value="{value}"', body)
 
 
+FIXED_FORM = {
+    "bias_type": "fixed_bias", "vcc": "12",
+    "rb": "1000", "rb_unit": "kohm",
+    "rc": "2.2", "rc_unit": "kohm",
+    "beta": "100", "vbe": "0.70",
+}
+EMITTER_FORM = dict(FIXED_FORM, bias_type="emitter_bias", re="1", re_unit="kohm")
+
+
+class TestLab03Cases(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_fixed_reference_case(self):
+        resp = self.client.post("/calculate", data=FIXED_FORM)
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn("1.13 mA", body)
+        self.assertIn("9.51 V", body)
+        self.assertIn("Mode: fixed_bias", body)
+
+    def test_emitter_reference_case(self):
+        body = self.client.post("/calculate", data=EMITTER_FORM).get_data(as_text=True)
+        self.assertIn("1.03 mA", body)
+        self.assertIn("8.71 V", body)
+
+    def test_emitter_re_change_affects_result(self):
+        body = self.client.post(
+            "/calculate", data=dict(EMITTER_FORM, re="2")
+        ).get_data(as_text=True)
+        self.assertNotIn("1.03 mA", body)
+        # 0.9401 mA is rendered by the shared Lab 02 formatter as 940 µA.
+        self.assertIn("940 µA", body)
+
+    def test_fixed_zero_rb_shows_error(self):
+        resp = self.client.post("/calculate", data=dict(FIXED_FORM, rb="0"))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.get_data(as_text=True)
+        self.assertIn("rb must be greater than zero", body)
+        self.assertNotIn('data-testid="result-panel"', body)
+
+    def test_fixed_missing_rb_shows_error(self):
+        data = {k: v for k, v in FIXED_FORM.items() if k != "rb"}
+        body = self.client.post("/calculate", data=data).get_data(as_text=True)
+        self.assertIn("rb must be a number", body)
+
+    def test_unknown_mode_shows_error(self):
+        body = self.client.post(
+            "/calculate", data=dict(FIXED_FORM, bias_type="no_such_bias")
+        ).get_data(as_text=True)
+        self.assertIn("Unknown bias type: no_such_bias", body)
+
+    def test_divider_unchanged(self):
+        body = self.client.post("/calculate", data=REFERENCE_FORM).get_data(as_text=True)
+        self.assertIn("8.05 V", body)
+        self.assertIn("1.23 mA", body)
+        self.assertIn("18.0 kΩ", body)
+
+
 if __name__ == "__main__":
     unittest.main()
