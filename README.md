@@ -16,6 +16,9 @@ and **Emitter Bias** (Lab 03), built for ENG29 2121.
   region verdict (Forward Active / Cutoff / Saturation). Invalid input and results
   outside the forward-active assumptions are flagged with readable warnings.
 - All numbers come from the backend on every request — nothing is hard-coded in HTML.
+- An inline circuit diagram sits above the form and updates while you type: it shows
+  only the resistors used by the selected mode and displays the entered values and
+  units (`Ω`, `kΩ`, `MΩ`). Press **Calculate DC Bias** to refresh `IC`/`VCE` in the diagram.
 
 ## Requirements
 
@@ -66,7 +69,7 @@ they still work after cloning the repository somewhere else.
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 60 tests ... OK`.
+Expected output: `Ran 65 tests ... OK`.
 
 ## Example — Lab 03 A2 (Fixed Bias)
 
