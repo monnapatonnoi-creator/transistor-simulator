@@ -53,13 +53,20 @@ Open `http://127.0.0.1:5000/` in your browser.
 
 > The Flask debug server is for local development only. Do not expose it to a public network.
 
+### One-click start (Windows)
+
+Double-click `เปิดเว็บ.vbs` to start the server in the background, then open
+`http://127.0.0.1:5000/`. It calls `run_web.ps1`, which does nothing if the server
+already answers on port 5000. Both scripts resolve paths from their own folder, so
+they still work after cloning the repository somewhere else.
+
 ## Test
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 50 tests ... OK`.
+Expected output: `Ran 54 tests ... OK`.
 
 ## Example — Lab 03 A2 (Fixed Bias)
 

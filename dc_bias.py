@@ -5,6 +5,7 @@ SI units only: volts, ohms, amperes. This module knows nothing about HTTP or HTM
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 from typing import Callable
 
@@ -27,6 +28,8 @@ class UnknownBiasType(ValueError):
 
 @dataclass(frozen=True)
 class BiasParams:
+    # Unused fields default to 0.0 so tests can pass only the fields their mode needs;
+    # validate_params() still rejects zeros for that mode's required fields.
     vcc: float
     r1: float = 0.0
     r2: float = 0.0
@@ -131,8 +134,13 @@ def validate_params(p: BiasParams, required: tuple[str, ...] | None = None) -> N
     """
     check = required if required is not None else ("vcc", "r1", "r2", "rc", "re", "beta")
     for field in check:
-        if getattr(p, field) <= 0:
+        value = getattr(p, field)
+        if not math.isfinite(value):
+            raise BiasInputError(f"{field} must be a finite number")
+        if value <= 0:
             raise BiasInputError(f"{field} must be greater than zero")
+    if not math.isfinite(p.vbe):
+        raise BiasInputError("vbe must be a finite number")
     if p.vbe < 0:
         raise BiasInputError("vbe must not be negative")
     if p.vbe >= p.vcc:

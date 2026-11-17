@@ -20,6 +20,9 @@
       {% if field in visible_fields %}
       <input type="hidden" name="{{ field }}" value="{{ form[field] }}">
       <input type="hidden" name="{{ field }}_unit" value="{{ form[field + '_unit'] }}">
+      {% else %}
+      <input type="hidden" name="carry_{{ field }}" value="{{ form[field] }}">
+      <input type="hidden" name="carry_{{ field }}_unit" value="{{ form[field + '_unit'] }}">
       {% endif %}
     {% endfor %}
     <button type="submit" class="secondary">Apply mode</button>

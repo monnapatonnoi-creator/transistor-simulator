@@ -159,6 +159,25 @@ class TestModeSwitch(unittest.TestCase):
         for value in ("9", "470", "1.5", "80", "0.65"):
             self.assertIn(f'value="{value}"', body)
 
+    def test_values_survive_round_trip_through_hidden_mode(self):
+        # Divider R1=47, switch to Fixed (R1 hidden), then back to Divider.
+        fixed = self.client.get(
+            "/?bias_type=fixed_bias&vcc=12&beta=100&vbe=0.70"
+            "&rb=1000&rb_unit=kohm&rc=2.2&rc_unit=kohm"
+            "&r1=47&r1_unit=kohm&r2=22&r2_unit=kohm&re=1&re_unit=kohm"
+        ).get_data(as_text=True)
+        self.assertIn('name="carry_r1" value="47"', fixed)
+        self.assertIn('name="carry_r1_unit" value="kohm"', fixed)
+
+        back = self.client.get(
+            "/?bias_type=voltage_divider&vcc=12&beta=100&vbe=0.70"
+            "&rb=1000&rb_unit=kohm&rc=2.2&rc_unit=kohm"
+            "&carry_r1=47&carry_r1_unit=kohm"
+            "&carry_r2=22&carry_r2_unit=kohm"
+            "&carry_re=1&carry_re_unit=kohm"
+        ).get_data(as_text=True)
+        self.assertIn('name="r1" step="any" value="47"', back)
+
 
 FIXED_FORM = {
     "bias_type": "fixed_bias", "vcc": "12",
@@ -211,6 +230,20 @@ class TestLab03Cases(unittest.TestCase):
             "/calculate", data=dict(FIXED_FORM, bias_type="no_such_bias")
         ).get_data(as_text=True)
         self.assertIn("Unknown bias type: no_such_bias", body)
+
+    def test_non_finite_input_shows_error_not_500(self):
+        for field in ("vcc", "beta", "vbe", "rb"):
+            with self.subTest(field=field):
+                resp = self.client.post(
+                    "/calculate", data=dict(FIXED_FORM, **{field: "nan"})
+                )
+                body = resp.get_data(as_text=True)
+                self.assertEqual(resp.status_code, 200)
+                self.assertIn(f"{field} must be a finite number", body)
+                self.assertNotIn('data-testid="result-panel"', body)
+        resp = self.client.post("/calculate", data=dict(FIXED_FORM, rb="1e309"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("rb must be a finite number", resp.get_data(as_text=True))
 
     def test_divider_unchanged(self):
         body = self.client.post("/calculate", data=REFERENCE_FORM).get_data(as_text=True)

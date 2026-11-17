@@ -93,6 +93,11 @@ def _form_from(source) -> dict:
         value = source.get(key)
         if value is not None:
             form[key] = value
+        # A field hidden in the current mode travels as carry_* so switching back
+        # restores it instead of silently falling back to the default.
+        carried = source.get("carry_" + key)
+        if carried is not None:
+            form[key] = carried
     return form
 
 
