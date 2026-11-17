@@ -44,6 +44,7 @@
         <select name="r1_unit">
           <option value="ohm" {% if form.r1_unit == 'ohm' %}selected{% endif %}>Ω</option>
           <option value="kohm" {% if form.r1_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+          <option value="mohm"{% if form.r1_unit == 'mohm' %} selected{% endif %}>MΩ</option>
         </select>
         <input type="number" name="r1" step="any" value="{{ form.r1 }}">
       </label>
@@ -54,6 +55,7 @@
         <select name="r2_unit">
           <option value="ohm" {% if form.r2_unit == 'ohm' %}selected{% endif %}>Ω</option>
           <option value="kohm" {% if form.r2_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+          <option value="mohm"{% if form.r2_unit == 'mohm' %} selected{% endif %}>MΩ</option>
         </select>
         <input type="number" name="r2" step="any" value="{{ form.r2 }}">
       </label>
@@ -64,6 +66,7 @@
         <select name="rb_unit">
           <option value="ohm" {% if form.rb_unit == 'ohm' %}selected{% endif %}>Ω</option>
           <option value="kohm" {% if form.rb_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+          <option value="mohm"{% if form.rb_unit == 'mohm' %} selected{% endif %}>MΩ</option>
         </select>
         <input type="number" name="rb" step="any" value="{{ form.rb }}">
       </label>
@@ -75,6 +78,7 @@
         <select name="rc_unit">
           <option value="ohm" {% if form.rc_unit == 'ohm' %}selected{% endif %}>Ω</option>
           <option value="kohm" {% if form.rc_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+          <option value="mohm"{% if form.rc_unit == 'mohm' %} selected{% endif %}>MΩ</option>
         </select>
         <input type="number" name="rc" step="any" value="{{ form.rc }}">
       </label>
@@ -84,6 +88,7 @@
         <select name="re_unit">
           <option value="ohm" {% if form.re_unit == 'ohm' %}selected{% endif %}>Ω</option>
           <option value="kohm" {% if form.re_unit == 'kohm' %}selected{% endif %}>kΩ</option>
+          <option value="mohm"{% if form.re_unit == 'mohm' %} selected{% endif %}>MΩ</option>
         </select>
         <input type="number" name="re" step="any" value="{{ form.re }}">
       </label>

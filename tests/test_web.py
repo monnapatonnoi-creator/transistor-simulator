@@ -1,6 +1,6 @@
 import unittest
 
-from app import DEFAULTS, create_app
+from app import DEFAULTS, _to_ohms, create_app
 from dc_bias import BIAS_REGISTRY
 
 
@@ -250,6 +250,37 @@ class TestLab03Cases(unittest.TestCase):
         self.assertIn("8.05 V", body)
         self.assertIn("1.23 mA", body)
         self.assertIn("18.0 kΩ", body)
+
+
+class TestMegaohmUnit(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_mohm_conversion(self):
+        self.assertEqual(_to_ohms("1", "mohm"), 1e6)
+        self.assertEqual(_to_ohms("2.2", "mohm"), 2.2e6)
+
+    def test_mohm_option_in_every_resistor_field(self):
+        for url in ("/", "/?bias_type=fixed_bias"):
+            body = self.client.get(url).get_data(as_text=True)
+            self.assertIn('<option value="mohm">MΩ</option>', body)
+
+    def test_mohm_rb_reproduces_a2(self):
+        body = self.client.post(
+            "/calculate", data=dict(FIXED_FORM, rb="1", rb_unit="mohm")
+        ).get_data(as_text=True)
+        self.assertIn("1.13 mA", body)
+        self.assertIn("9.51 V", body)
+
+    def test_mohm_unit_survives_mode_switch(self):
+        fixed = self.client.get(
+            "/?bias_type=fixed_bias&rb=1&rb_unit=mohm"
+        ).get_data(as_text=True)
+        self.assertIn('name="rb_unit" value="mohm"', fixed)
+        back = self.client.get(
+            "/?bias_type=voltage_divider&carry_rb_unit=mohm"
+        ).get_data(as_text=True)
+        self.assertIn('name="carry_rb_unit" value="mohm"', back)
 
 
 if __name__ == "__main__":

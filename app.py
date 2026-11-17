@@ -33,6 +33,8 @@ RESISTOR_FIELDS = ("r1", "r2", "rb", "rc", "re")
 
 
 def _to_ohms(raw: str, unit: str) -> float:
+    if unit == "mohm":
+        return float(raw) * 1_000_000.0
     if unit == "kohm":
         return float(raw) * 1000.0
     if unit == "ohm":

@@ -11,7 +11,7 @@ and **Emitter Bias** (Lab 03), built for ENG29 2121.
   - **Voltage Divider** — `VCC`, `R1`, `R2`, `RC`, `RE`, `β`, `VBE`
   - **Fixed Bias** — `VCC`, `RB`, `RC`, `β`, `VBE` (emitter tied to ground)
   - **Emitter Bias** — `VCC`, `RB`, `RE`, `RC`, `β`, `VBE`
-- Resistors accept Ω or kΩ (1 MΩ = 1000 kΩ). The model keeps SI units internally.
+- Resistors accept Ω, kΩ or MΩ (1 MΩ = 1000 kΩ = 1,000,000 Ω). The model keeps SI units internally.
 - The backend computes `VTH`, `RTH`, `IB`, `IC`, `IE`, `VB`, `VE`, `VC`, `VCE` and a
   region verdict (Forward Active / Cutoff / Saturation). Invalid input and results
   outside the forward-active assumptions are flagged with readable warnings.
