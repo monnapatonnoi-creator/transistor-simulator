@@ -1,0 +1,40 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * ce voltage divider reference - lab 04
+
+ASCII raw file "C:\Users\b6829162\AppData\Local\Temp\opencode\netlist_tran.raw"
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+No. of Data Columns : 7  
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vcc                                         12
+rc_top                                      12
+base                                   1.94911
+col                                    9.18941
+emi                                    1.28945
+out                                          0
+in                                           0
+vs#branch                                    0
+vic#branch                          0.00127754
+vcc#branch                         -0.00137805
+
+
+No. of Data Rows : 1008
+
+Total analysis time (seconds) = 0.0072311
+
+Total elapsed time (seconds) = 0.037 
+
+Total DRAM available = 16122.914 MB.
+DRAM currently available = 8785.340 MB.
+Maximum ngspice program size =   17.461 MB.
+Current ngspice program size =   17.461 MB.
+

@@ -1,0 +1,21 @@
+Title: * ce voltage divider reference - lab 04
+Date: Tue Nov 24 17:19:47  2026
+Command: ngspice-47, Build Aug 11 2026   13:49:23
+Plotname: Operating Point
+Flags: real
+No. Variables: 6
+No. Points: 1       
+Variables:
+	0	v(in)	voltage
+	1	v(out)	voltage
+	2	v(base)	voltage
+	3	v(emi)	voltage
+	4	v(col)	voltage
+	5	i(vic)	current
+Values:
+0		0.000000000000000e+00
+	0.000000000000000e+00
+	1.949112053392557e+00
+	1.289453694188224e+00
+	9.189410182055312e+00
+	1.277540826338495e-03
