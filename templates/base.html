@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BJT DC Bias</title>
+<title>BJT Bias & CE Amplifier Simulator</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="{{ url_for('static', filename='diagram.js') }}" defer></script>
 </head>
 <body>
-<header><h1>BJT DC Bias</h1></header>
+<header><h1>BJT Bias & CE Amplifier Simulator</h1></header>
 <main>{% block content %}{% endblock %}</main>
-<footer>Model: fixed β, fixed VBE, forward-active approximation — not a SPICE simulation.</footer>
+<footer>Analytical panel: fixed β, fixed VBE, forward-active approximation (not SPICE). SPICE panel: real ngspice batch runs with netlist and log evidence.</footer>
 </body>
 </html>
