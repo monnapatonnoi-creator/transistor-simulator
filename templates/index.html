@@ -200,4 +200,86 @@
   <div class="region"><strong>Region:</strong> <span data-testid="region">{{ region_labels[result.region] }}</span></div>
 </section>
 {% endif %}
+<section class="sim-panel" data-testid="sim-panel">
+  <h2>SPICE (ngspice)</h2>
+  <p class="muted">Analytical reference (Lab 3) results above are a separate model and stay unchanged when SPICE fails or succeeds.</p>
+  <form method="post" action="{{ url_for('simulate') }}" class="sim-form">
+    <fieldset>
+      <legend>CE voltage-divider reference circuit</legend>
+      <div class="row">
+        <label>
+          Analysis
+          <select name="analysis">
+            <option value="dc" {% if sim_form.analysis == 'dc' %}selected{% endif %}>DC operating point (.op)</option>
+            <option value="ac" {% if sim_form.analysis == 'ac' %}selected{% endif %}>AC sweep (.ac)</option>
+            <option value="tran" {% if sim_form.analysis == 'tran' %}selected{% endif %}>Transient (.tran)</option>
+          </select>
+        </label>
+        <label>VCC (V)<input type="number" step="any" name="sim_vcc" value="{{ sim_form.sim_vcc }}"></label>
+        <label>R1 (kΩ)<input type="number" step="any" name="sim_r1" value="{{ sim_form.sim_r1 }}"></label>
+        <label>R2 (kΩ)<input type="number" step="any" name="sim_r2" value="{{ sim_form.sim_r2 }}"></label>
+        <label>RC (kΩ)<input type="number" step="any" name="sim_rc" value="{{ sim_form.sim_rc }}"></label>
+        <label>RE (kΩ)<input type="number" step="any" name="sim_re" value="{{ sim_form.sim_re }}"></label>
+        <label>RL (kΩ)<input type="number" step="any" name="sim_rl" value="{{ sim_form.sim_rl }}"></label>
+        <label>Cin (µF)<input type="number" step="any" name="sim_cin_uf" value="{{ sim_form.sim_cin_uf }}"></label>
+        <label>Cout (µF)<input type="number" step="any" name="sim_cout_uf" value="{{ sim_form.sim_cout_uf }}"></label>
+        <label>Source (mV peak)<input type="number" step="any" name="sim_amplitude_mv" value="{{ sim_form.sim_amplitude_mv }}"></label>
+        <label>Frequency (kHz)<input type="number" step="any" name="sim_freq_khz" value="{{ sim_form.sim_freq_khz }}"></label>
+      </div>
+      <button type="submit">Run SPICE</button>
+    </fieldset>
+  </form>
+
+  {% if sim_status %}
+  <p class="sim-status {{ 'ok' if sim_status == 'Success' else 'bad' }}" data-testid="sim-status">
+    {{ sim_status }}{% if sim %} · {{ sim.version }} · model {{ sim.model }}{% endif %}
+  </p>
+  {% endif %}
+  {% if sim_errors %}
+  <div class="error" data-testid="sim-error">
+    {% for e in sim_errors %}<p>{{ e }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if sim %}
+  <div data-testid="sim-result">
+    {% if sim.op %}
+    <h3>DC operating point</h3>
+    <table class="result-table">
+      <tr><th>VB</th><td class="value mono">{{ sim.op.vb|fmt_voltage }}</td></tr>
+      <tr><th>VE</th><td class="value mono">{{ sim.op.ve|fmt_voltage }}</td></tr>
+      <tr><th>VC</th><td class="value mono">{{ sim.op.vc|fmt_voltage }}</td></tr>
+      <tr><th>VCE</th><td class="value mono">{{ sim.op.vce|fmt_voltage }}</td></tr>
+      <tr><th>IC</th><td class="value mono">{{ sim.op.ic|fmt_current }}</td></tr>
+    </table>
+    {% endif %}
+    {% if sim.ac %}
+    <h3>AC sweep</h3>
+    <p class="muted">Sweep: {{ sim.ac[0].freq_hz|round(1) }}–{{ sim.ac[-1].freq_hz|round(1) }} Hz ·
+      Gain {{ sim.ac[0].gain_db|round(2) }}–{{ sim.ac[-1].gain_db|round(2) }} dB ·
+      Phase {{ sim.ac[0].phase_deg|round(1) }}–{{ sim.ac[-1].phase_deg|round(1) }} deg</p>
+    <p><strong>−3 dB cutoff:</strong>
+      {% if sim.cutoff_hz is none %}not determined in sweep range{% else %}{{ sim.cutoff_hz|round(1) }} Hz{% endif %}</p>
+    {% endif %}
+    {% if sim.tran %}
+    <h3>Transient waveforms</h3>
+    <p class="muted">{{ sim.tran|length }} time samples · {{ sim.tran[0].time_s*1000|round(3) }}–{{ sim.tran[-1].time_s*1000|round(3) }} ms</p>
+    {% endif %}
+    {% if sim.warnings %}
+    <div class="warning" data-testid="sim-warnings">
+      {% for w in sim.warnings %}<p>{{ w }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <details class="sim-evidence">
+      <summary>Netlist and ngspice log (evidence)</summary>
+      <h4>Netlist</h4><pre class="mono">{{ sim.netlist }}</pre>
+      <h4>Log excerpt</h4><pre class="mono">{{ sim.log_excerpt }}</pre>
+    </details>
+    <div class="sim-plots">
+      {% if sim_plots.mag %}<div class="sim-plot">{{ sim_plots.mag }}</div>{% endif %}
+      {% if sim_plots.wave %}<div class="sim-plot">{{ sim_plots.wave }}</div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</section>
 {% endblock %}
