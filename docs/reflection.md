@@ -29,3 +29,20 @@ Limitation of this model: fixed β and fixed VBE mean it is only accurate near t
 point. Real transistors vary with temperature and current, so this is a teaching tool,
 not a design-signoff simulator. Results outside forward-active are labelled with raw
 numbers left visible and a warning, never quietly fixed.
+
+## Lab 04 — what the AI did / what you should check
+
+- The AI installed ngspice 47, generated and ran real `.op/.ac/.tran` decks, parsed the
+  ASCII raw files, and kept the SPICE panel strictly separate from the unchanged
+  analytical panel; no simulation value or plot is hard-coded in HTML.
+- The AI validated B1–B7 in a real browser and captured desktop/mobile screenshots for
+  B8; every observed number and the exact ngspice version/model are in
+  `docs/validation.md`. Impeccable could not be used (no Node/npx installed), and that
+  is recorded as NOT RUN rather than claimed.
+- You should independently verify the model choice: `LAB4NPN` was self-chosen because
+  no Starter Kit model came with the handout. Check the model line in the evidence
+  panel, replace it with your assigned device if required, and rerun the three analyses.
+- You should also check the −3 dB rule by eye on the Bode plot. The reference sweep is
+  flat (4.74–4.86 dB), so the honest answer is `not determined in sweep range`; if your
+  device gives a real roll-off, confirm the reported cutoff is the first downward
+  crossing 3 dB below the passband maximum.
