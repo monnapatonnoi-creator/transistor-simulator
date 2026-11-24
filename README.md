@@ -24,6 +24,24 @@ and **Emitter Bias** (Lab 03), built for ENG29 2121.
 
 - Python 3.10+ (tested with 3.14.2)
 - Flask ≥3.0, <4
+- ngspice 47 (external executable, only for the Lab 04 SPICE section)
+
+### ngspice (Lab 04)
+
+The SPICE section calls an external `ngspice` binary; it is **not** a pip package.
+On Windows, download the official `ngspice-47_64.7z` archive from
+<https://sourceforge.net/projects/ngspice/files/ng-spice-rework/47/>, extract it,
+and add the folder containing `ngspice.exe` (for example
+`...\ngspice\Spice64\bin`) to your user PATH. Open a new terminal afterwards and
+check that `shutil.which("ngspice")` is not `None`.
+
+If PATH cannot be changed, set the environment variable `NGSPICE_EXE` to the full
+path of `ngspice.exe` before starting Flask. The app also checks the standard
+Windows user install location as a fallback. The version used to produce the
+recorded results was **ngspice-47, Build Aug 11 2026 13:49:23**; the app reports
+the exact version from the executable at run time in the status panel.
+The app runs it in batch mode with an argument list, a timeout and a private
+temporary working directory — never through a shell.
 
 ## Setup (Windows PowerShell)
 
