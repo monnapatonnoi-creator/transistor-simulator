@@ -170,6 +170,27 @@ def _form_from(source) -> dict:
     return form
 
 
+def _lab3_form(source) -> dict:
+    """Lab 3 fields carried through /simulate so its result is not lost."""
+    form = _form_from(source)
+    return {key: form[key] for key in DEFAULTS}
+
+
+def _analytical_state(form):
+    """Return (active, visible_fields, result, errors) for one Lab 3 form."""
+    active = form.get("bias_type", "voltage_divider")
+    bias = BIAS_REGISTRY.get(active)
+    required = bias.required if bias else ()
+    params, errors = _parse_request(form, required)
+    result = None
+    if params is not None:
+        try:
+            result = calculate(active, params)
+        except (BiasInputError, UnknownBiasType) as exc:
+            errors.append(str(exc))
+    return active, set(required), result, errors
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.jinja_env.filters["fmt_current"] = fmt_current
@@ -190,6 +211,8 @@ def create_app() -> Flask:
             "sim_errors": [],
             "sim_status": "",
             "sim_plots": {"mag": Markup(""), "wave": Markup("")},
+            "lab3_hidden": _lab3_form({}),
+            "lab3_has_result": False,
         }
         context.update(overrides)
         return render_template("index.html", **context)
@@ -204,27 +227,21 @@ def create_app() -> Flask:
             form=_form_from(request.args),
             active_bias=active,
             visible_fields=visible_fields,
+            lab3_hidden=_lab3_form(request.args),
         )
 
     @app.post("/calculate", endpoint="calculate_bias")
     def calculate_bias():
         form = request.form
-        active = form.get("bias_type", "voltage_divider")
-        bias = BIAS_REGISTRY.get(active)
-        required = bias.required if bias else ()
-        params, errors = _parse_request(form, required)
-        result = None
-        if params is not None:
-            try:
-                result = calculate(active, params)
-            except (BiasInputError, UnknownBiasType) as exc:
-                errors.append(str(exc))
+        active, required, result, errors = _analytical_state(form)
         return render_index(
-            form=form,
-            active_bias=active,
-            visible_fields=set(required),
+            form=_form_from(form),
+            active_bias=active if active in BIAS_REGISTRY else "voltage_divider",
+            visible_fields=required,
             errors=errors,
             result=result,
+            lab3_hidden=_lab3_form(form),
+            lab3_has_result=result is not None,
         )
 
     @app.post("/simulate", endpoint="simulate")
@@ -245,18 +262,25 @@ def create_app() -> Flask:
                 if sim.tran:
                     plots["wave"] = waveform_svg(sim.tran)
         form = request.form
-        active = form.get("bias_type", "voltage_divider")
-        bias = BIAS_REGISTRY.get(active)
-        required = bias.required if bias else ()
+        # The SPICE form carries the last calculated Lab 3 state in lab3_*
+        # fields; recompute it so a successful or failed run cannot erase it.
+        lab3 = _lab3_form(dict(form))
+        if form.get("lab3_has_result") == "1":
+            active, required, result, _ = _analytical_state(lab3)
+        else:
+            active, required, result = "voltage_divider", set(), None
         return render_index(
-            form=_form_from(form),
-            active_bias=active if bias else "voltage_divider",
-            visible_fields=set(required),
+            form=lab3,
+            active_bias=active if active in BIAS_REGISTRY else "voltage_divider",
+            visible_fields=required,
+            result=result,
             sim=sim,
             sim_form=_sim_form_from(form),
             sim_errors=errors,
             sim_status=status,
             sim_plots=plots,
+            lab3_hidden=lab3,
+            lab3_has_result=result is not None,
         )
 
     return app

@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -42,6 +43,11 @@ def post(client, **changes):
     data = SIM_FORM.copy()
     data.update(changes)
     return client.post("/simulate", data=data)
+
+
+def lab3_hidden_from(body):
+    """Mimic the hidden Lab 3 inputs a browser submits with the SPICE form."""
+    return dict(re.findall(r'name="(lab3_[^"]+)" value="([^"]*)"', body))
 
 
 class TestSimulateRoute(unittest.TestCase):
@@ -91,10 +97,33 @@ class TestSimulateRoute(unittest.TestCase):
         self.assertNotIn('data-testid="bode-plot"', body)
 
     def test_simulate_keeps_analytical_result_context(self):
+        calc_body = self.client.post(
+            "/calculate", data=REFERENCE_FORM).get_data(as_text=True)
+        self.assertIn('data-testid="result-panel"', calc_body)
+        analytical_fields = SIM_FORM.copy()
+        analytical_fields.update(lab3_hidden_from(calc_body))
+
         with patch.object(app_module, "run_analysis", return_value=fixture_result("dc")):
-            body = post(self.client).get_data(as_text=True)
+            body = self.client.post(
+                "/simulate", data=analytical_fields).get_data(as_text=True)
+        self.assertIn('data-testid="result-panel"', body)
         self.assertIn("Analytical reference (Lab 3)", body)
         self.assertIn('name="bias_type"', body)
+        self.assertIn("1.23 mA", body)
+        self.assertIn("8.05 V", body)
+
+    def test_simulate_error_keeps_analytical_result_context(self):
+        calc_body = self.client.post(
+            "/calculate", data=REFERENCE_FORM).get_data(as_text=True)
+        analytical_fields = SIM_FORM.copy()
+        analytical_fields.update(lab3_hidden_from(calc_body))
+        with patch.object(app_module, "run_analysis",
+                          side_effect=NgspiceUnavailable("ngspice not found")):
+            body = self.client.post(
+                "/simulate", data=analytical_fields).get_data(as_text=True)
+        self.assertIn('data-testid="result-panel"', body)
+        self.assertIn("1.23 mA", body)
+        self.assertIn("8.05 V", body)
 
     def test_lab3_calculate_unchanged(self):
         resp = self.client.post("/calculate", data=REFERENCE_FORM)

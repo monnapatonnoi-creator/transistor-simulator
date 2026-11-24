@@ -29,9 +29,10 @@ A Flask web application built for ENG29 2121:
   `.op` / `.ac` / `.tran` and press **Run SPICE**. Validation errors and engine errors
   clear only the SPICE result area — the analytical Lab 3 result stays untouched.
 - The AC view plots gain (dB) and phase (deg) against log frequency from the real sweep.
-  A cutoff is reported only when the sweep actually crosses −3 dB; otherwise it says
-  `not determined in sweep range`. The transient view plots `Vin` and `Vout` versus
-  time from real samples.
+  The −3 dB reference is the low-frequency passband plateau (first sweep decade), not
+  the global peak; a cutoff is reported only when the sweep actually crosses that
+  threshold, otherwise it says `not determined in sweep range`. The transient view plots
+  `Vin` and `Vout` versus time from real samples.
 
 ## Requirements
 
@@ -118,7 +119,7 @@ they still work after cloning the repository somewhere else.
 python -m unittest discover -s tests -v
 ```
 
-Expected output: `Ran 95 tests ... OK` (66 Lab 02/03 tests + 26 SPICE
+Expected output: `Ran 99 tests ... OK` (66 Lab 02/03 tests + 30 SPICE
 unit/route tests + 3 real-ngspice integration tests). The integration tests skip
 themselves only when no ngspice executable can be found.
 

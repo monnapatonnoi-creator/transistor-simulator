@@ -204,6 +204,10 @@
   <h2>SPICE (ngspice)</h2>
   <p class="muted">Analytical reference (Lab 3) results above are a separate model and stay unchanged when SPICE fails or succeeds.</p>
   <form method="post" action="{{ url_for('simulate') }}" class="sim-form">
+    <input type="hidden" name="lab3_has_result" value="{{ 1 if lab3_has_result else 0 }}">
+    {% for field, value in lab3_hidden.items() %}
+    <input type="hidden" name="lab3_{{ field }}" value="{{ value }}">
+    {% endfor %}
     <fieldset>
       <legend>CE voltage-divider reference circuit</legend>
       <div class="row">

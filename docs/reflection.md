@@ -45,4 +45,9 @@ numbers left visible and a warning, never quietly fixed.
 - You should also check the −3 dB rule by eye on the Bode plot. The reference sweep is
   flat (4.74–4.86 dB), so the honest answer is `not determined in sweep range`; if your
   device gives a real roll-off, confirm the reported cutoff is the first downward
-  crossing 3 dB below the passband maximum.
+  crossing 3 dB below the **low-frequency passband plateau**, not below the global peak.
+- A whole-branch review caught three issues that I fixed with failing tests first:
+  running SPICE used to erase the Lab 3 result (now carried as hidden `lab3_*` fields),
+  non-finite raw values could become a fake `Success` (now rejected), and the cutoff
+  used the global maximum instead of the passband plateau. The B1 → B2 sequential
+  browser recheck and 99-test suite are the evidence for those fixes.

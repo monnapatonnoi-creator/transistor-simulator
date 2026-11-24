@@ -86,6 +86,28 @@ Values:
         with self.assertRaises(ParseFailed):
             parse_op(broken)
 
+    def test_parse_rejects_non_finite_real_values(self):
+        broken = DC_RAW.replace("1.949112053392557e+00", "nan", 1)
+        broken = broken.replace("1.289453694188224e+00", "inf", 1)
+        with self.assertRaises(ParseFailed):
+            parse_op(broken)
+
+    def test_parse_rejects_non_finite_complex_values(self):
+        broken = AC_RAW.replace(
+            "-1.679508668959216e+00,-3.977201753719621e-01",
+            "nan,-3.977201753719621e-01", 1)
+        with self.assertRaises(ParseFailed):
+            parse_ac(broken)
+
+    def test_cutoff_uses_low_frequency_plateau_not_global_peak(self):
+        # A rising-then-falling response: the global peak (26 dB at 1 kHz) is
+        # above the low-frequency passband (20 dB). The -3 dB reference must
+        # be the passband plateau, so the crossing is at 100 kHz, not absent.
+        gains = [(10.0, 20.0), (100.0, 20.0), (1000.0, 26.0),
+                 (10_000.0, 20.0), (100_000.0, 10.0)]
+        points = [AcPoint(f, g, 10 ** (g / 20), -180.0) for f, g in gains]
+        self.assertEqual(find_cutoff(points), 100_000.0)
+
 
 if __name__ == "__main__":
     unittest.main()

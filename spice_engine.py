@@ -191,9 +191,15 @@ def _raw_columns(text: str) -> tuple[list[str], list[list[Any]]]:
             for value in values:
                 if is_complex:
                     real, imag = value.split(",")
-                    row.append(complex(float(real), float(imag)))
+                    real_value, imag_value = float(real), float(imag)
+                    if not (math.isfinite(real_value) and math.isfinite(imag_value)):
+                        raise ParseFailed("raw file contains a non-finite value")
+                    row.append(complex(real_value, imag_value))
                 else:
-                    row.append(float(value))
+                    number = float(value)
+                    if not math.isfinite(number):
+                        raise ParseFailed("raw file contains a non-finite value")
+                    row.append(number)
             rows.append(row)
         return names, rows
     except (StopIteration, ValueError, IndexError) as exc:
@@ -205,6 +211,13 @@ def _column(names: list[str], row: list[Any], name: str) -> Any:
         return row[names.index(name.lower())]
     except ValueError as exc:
         raise ParseFailed(f"raw file is missing {name}") from exc
+
+
+def _check_finite(*values: float) -> None:
+    """Guard against corrupt solver output becoming a successful result."""
+    for value in values:
+        if not math.isfinite(value):
+            raise ParseFailed("computed result is not finite")
 
 
 def _as_float(value: complex | float) -> float:
@@ -233,7 +246,9 @@ def parse_op(raw_text: str) -> OpResult:
     ve = float(_column(names, row, "v(emi)"))
     vc = float(_column(names, row, "v(col)"))
     ic = float(_column(names, row, "i(vic)"))
-    return OpResult(vb=vb, ve=ve, vc=vc, vce=vc - ve, ic=ic)
+    vce = vc - ve
+    _check_finite(vb, ve, vc, vce, ic)
+    return OpResult(vb=vb, ve=ve, vc=vc, vce=vce, ic=ic)
 
 
 def parse_ac(raw_text: str) -> list[AcPoint]:
@@ -244,29 +259,43 @@ def parse_ac(raw_text: str) -> list[AcPoint]:
         vin = _column(names, row, "v(in)")
         vout = _column(names, row, "v(out)")
         gain_db = _db(vout) - _db(vin)
+        try:
+            gain_mag = 10 ** (gain_db / 20.0)
+        except OverflowError as exc:
+            raise ParseFailed("AC gain overflowed") from exc
+        phase_deg = _wrap(_phase(vout) - _phase(vin))
+        _check_finite(freq, gain_db, gain_mag, phase_deg)
         points.append(AcPoint(
             freq_hz=freq,
             gain_db=gain_db,
-            gain_mag=10 ** (gain_db / 20.0),
-            phase_deg=_wrap(_phase(vout) - _phase(vin)),
+            gain_mag=gain_mag,
+            phase_deg=phase_deg,
         ))
     return points
 
 
 def parse_tran(raw_text: str) -> list[TranPoint]:
     names, rows = _raw_columns(raw_text)
-    return [TranPoint(
-        time_s=float(_column(names, row, "time")),
-        vin_v=float(_column(names, row, "v(in)")),
-        vout_v=float(_column(names, row, "v(out)")),
-    ) for row in rows]
+    points: list[TranPoint] = []
+    for row in rows:
+        time_s = float(_column(names, row, "time"))
+        vin_v = float(_column(names, row, "v(in)"))
+        vout_v = float(_column(names, row, "v(out)"))
+        _check_finite(time_s, vin_v, vout_v)
+        points.append(TranPoint(time_s=time_s, vin_v=vin_v, vout_v=vout_v))
+    return points
 
 
 def find_cutoff(points: list[AcPoint]) -> float | None:
-    """First downward -3 dB crossing relative to the passband maximum."""
+    """First downward -3 dB crossing relative to the low-frequency plateau."""
     if len(points) < 3:
         return None
-    threshold = max(point.gain_db for point in points) - 3.0
+    # The passband is the early part of the sweep, not the global maximum: a
+    # mid-band peak must not invent a cutoff by shifting the reference up.
+    first_decade = [point.gain_db for point in points
+                    if point.freq_hz <= points[0].freq_hz * 10.0]
+    reference = max(first_decade) if first_decade else points[0].gain_db
+    threshold = reference - 3.0
     in_passband = False
     for point in points:
         if point.gain_db > threshold:

@@ -90,9 +90,11 @@ Test run: `python -m unittest discover -s tests -v` →
   so the app states the full model line on every successful run. Replace this one line
   in `spice_engine.py::MODEL_LINE` to use a different transistor.
 - AC sweep is fixed at `.ac dec 20 10 10Meg` (121 points, 10 Hz–10 MHz). The −3 dB
-  cutoff is the first downward crossing 3 dB below the maximum gain measured in that
-  sweep; if there is no crossing the page honestly says
-  `not determined in sweep range` (no fabricated cutoff).
+  reference is the low-frequency passband plateau (first sweep decade), **not** the
+  global maximum: a mid-band peak must not shift the reference and invent a cutoff.
+  If there is no downward crossing of that threshold the page honestly says
+  `not determined in sweep range` (no fabricated cutoff). Non-finite raw values are
+  rejected as `ParseFailed` instead of becoming a fake `Success`.
 - `v(out)` is AC-coupled through `COUT`, so the transient waveform is centred on 0 V;
   this is expected and is why the plot shows a small inverted signal rather than the
   DC collector level.
@@ -113,6 +115,18 @@ Every value below was read from the rendered page, not computed for the table.
 | **B7** RE = 0 / engine missing | clear error, no fake success | `sim_re=0` → `re must be greater than zero`; no `sim-result`, no `bode-plot`, no `waveform-plot`. Engine-missing path covered by `tests/test_spice_runner.py` (`NgspiceUnavailable`) | PASS — browser + unit tests |
 | **B8** desktop/mobile viewport + mode switch | readable, no clipped graph/button | headless Chrome screenshots at **1280×3000** and **390×4400** of a real `/simulate` POST (emitter-bias analytical mode + AC result). Page uses `max-width:1000px`, single-column `.row` and horizontally scrollable plot containers under 640 px | PASS — `docs/captures/lab04-desktop.png`, `docs/captures/lab04-mobile.png` |
 
+### B1 → B2 sequential post-review recheck
+
+After restarting Flask at `http://127.0.0.1:5001/` with the review fixes loaded, the
+same browser tab was used for: **Calculate DC Bias** (A1 defaults) → **Run SPICE**
+(DC). Before the second click the result panel showed `Result — voltage_divider`,
+`IC 1.23 mA`, `VCE 8.05 V`. After the real ngspice run returned
+`Success · ngspice-47, Build Aug 11 2026 13:49:23 · model LAB4NPN`, the analytical
+panel still showed `1.23 mA` / `8.05 V` and the SPICE table separately showed
+`VB 1.95 V`, `VE 1.29 V`, `VC 9.19 V`, `VCE 7.90 V`, `IC 1.28 mA`.
+This verifies the SPICE form carries the Lab 3 result instead of erasing it.
+Evidence: `docs/captures/lab04-sequential.png` (469×3264).
+
 ## UI polish attempt (honest result)
 
 `npx impeccable install` was **NOT RUN**: Node.js/npm/npx are not installed in this
@@ -124,7 +138,7 @@ with the two B8 screenshots and the responsive CSS media query instead.
 
 ```
 C:\Users\b6829162\Documents\Default Project\transistor-simulator\.venv\Scripts\python.exe -m unittest discover -s tests -v
-Ran 95 tests in 12.690s
+Ran 99 tests in 12.704s
 OK
 ```
 
