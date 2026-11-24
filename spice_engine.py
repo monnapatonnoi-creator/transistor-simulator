@@ -8,7 +8,12 @@ All values inside the model are SI (V, ohm, F, Hz, s).
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+import os
+import shutil
+import subprocess
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 ANALYSES = ("dc", "ac", "tran")
@@ -269,3 +274,147 @@ def find_cutoff(points: list[AcPoint]) -> float | None:
         elif in_passband:
             return point.freq_hz
     return None
+
+
+@dataclass(frozen=True)
+class SimResult:
+    analysis: str
+    status: str
+    model: str
+    netlist: str
+    log_excerpt: str
+    version: str = "unknown"
+    op: OpResult | None = None
+    ac: list[AcPoint] = field(default_factory=list)
+    tran: list[TranPoint] = field(default_factory=list)
+    cutoff_hz: float | None = None
+    warnings: list[str] = field(default_factory=list)
+
+
+def find_ngspice() -> str | None:
+    """Locate ngspice without hard-coding one machine's install path."""
+    override = os.environ.get("NGSPICE_EXE")
+    if override:
+        return override if Path(override).exists() else None
+    found = shutil.which("ngspice")
+    if found:
+        return found
+    homes = [Path.home()]
+    if os.name == "nt":
+        local = os.environ.get("LOCALAPPDATA")
+        if local:
+            homes.append(Path(local))
+    for home in homes:
+        roots = [home / "AppData" / "Local" / "Programs" / "ngspice",
+                 home / "Programs" / "ngspice"]
+        for root in roots:
+            if root.is_dir():
+                for exe in root.rglob("ngspice.exe"):
+                    return str(exe)
+    return None
+
+
+def _version_from_raw(raw_text: str) -> str:
+    for line in raw_text.splitlines():
+        if line.startswith("Command:"):
+            return line.split(":", 1)[1].strip()
+    return "unknown"
+
+
+def _run_once(params: SimInput, analysis: str, exe: str, timeout: float):
+    """Write a deck, run ngspice in batch mode and return (netlist, log, raw)."""
+    netlist = build_netlist(params, analysis)
+    with tempfile.TemporaryDirectory(prefix="lab04-spice-") as workdir:
+        directory = Path(workdir)
+        deck = directory / "ce.cir"
+        log_path = directory / "ce.log"
+        raw_path = directory / "ce.raw"
+        deck.write_text(netlist, encoding="utf-8")
+
+        command = [exe, "-b", "-o", str(log_path), "-r", str(raw_path), str(deck)]
+        try:
+            process = subprocess.run(
+                command,
+                cwd=workdir,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RunFailed(f"ngspice timed out after {timeout:g} s") from exc
+        except OSError as exc:
+            raise NgspiceUnavailable(f"could not start ngspice: {exc}") from exc
+
+        if process.returncode != 0:
+            detail = (process.stderr or process.stdout or "").strip()[:400]
+            raise RunFailed(f"ngspice exited with status {process.returncode}: {detail}")
+
+        if not raw_path.exists() or raw_path.stat().st_size == 0:
+            raise OutputEmpty("ngspice produced no raw output")
+        raw_text = raw_path.read_text(encoding="utf-8", errors="replace")
+        if not raw_text.strip():
+            raise OutputEmpty("ngspice raw output is empty")
+        log_text = (log_path.read_text(encoding="utf-8", errors="replace")
+                    if log_path.exists() else "")
+        return netlist, log_text, raw_text
+
+
+def run_analysis(params: SimInput, analysis: str, *, exe: str | None = None,
+                 timeout: float = 30.0) -> SimResult:
+    """Run one real ngspice analysis and return parsed, provenance-tagged data."""
+    if analysis not in ANALYSES:
+        raise InvalidInput(f"Unknown analysis: {analysis}")
+    engine = exe or find_ngspice()
+    if not engine or not Path(engine).exists():
+        raise NgspiceUnavailable(
+            "ngspice not found — install it or set NGSPICE_EXE to ngspice.exe"
+        )
+
+    netlist, log_text, raw_text = _run_once(params, analysis, engine, timeout)
+    op = None
+    ac: list[AcPoint] = []
+    tran: list[TranPoint] = []
+    cutoff: float | None = None
+    try:
+        if analysis == "dc":
+            op = parse_op(raw_text)
+        elif analysis == "ac":
+            ac = parse_ac(raw_text)
+            cutoff = find_cutoff(ac)
+        else:
+            tran = parse_tran(raw_text)
+    except ParseFailed:
+        raise
+    except (ValueError, IndexError, KeyError, ZeroDivisionError) as exc:
+        raise ParseFailed(f"could not interpret ngspice results: {exc}") from exc
+
+    warnings = [line.strip() for line in log_text.splitlines()
+                if "warning" in line.lower()][:10]
+    return SimResult(
+        analysis=analysis,
+        status="success",
+        model=MODEL_NAME,
+        netlist=netlist,
+        log_excerpt=log_text[:4000],
+        version=_version_from_raw(raw_text),
+        op=op,
+        ac=ac,
+        tran=tran,
+        cutoff_hz=cutoff,
+        warnings=warnings,
+    )
+
+
+def ngspice_version(exe: str | None = None) -> str:
+    """Return the version string printed by ngspice in a real batch run."""
+    engine = exe or find_ngspice()
+    if not engine or not Path(engine).exists():
+        raise NgspiceUnavailable("ngspice not found")
+    _, _, raw_text = _run_once(
+        SimInput(vcc=12.0, r1=100_000.0, r2=22_000.0, rc=2_200.0, re=1_000.0,
+                 rl=10_000.0, cin_f=10e-6, cout_f=10e-6,
+                 amplitude_v=0.010, freq_hz=1_000.0),
+        "dc", engine, 30.0,
+    )
+    return _version_from_raw(raw_text)
